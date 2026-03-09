@@ -3,7 +3,7 @@ import hashlib
 import httpx
 from bs4 import BeautifulSoup
 
-from ..chunker import chunk_text
+from ..chunker import chunk_text, count_tokens
 from ..store import get_collection
 
 _HEADERS = {"User-Agent": "botscrum/0.1 (local RAG tool)"}
@@ -21,7 +21,7 @@ def _fetch_text(url: str) -> str:
     return soup.get_text(separator="\n", strip=True)
 
 
-def ingest_url(url: str) -> int:
+def ingest_url(url: str) -> list[int]:
     text = _fetch_text(url)
     source_id = hashlib.sha256(url.encode()).hexdigest()[:16]
 
@@ -33,7 +33,7 @@ def ingest_url(url: str) -> int:
 
     chunks = chunk_text(text)
     if not chunks:
-        return 0
+        return []
 
     collection.add(
         ids=[f"{source_id}_{i}" for i in range(len(chunks))],
@@ -43,4 +43,4 @@ def ingest_url(url: str) -> int:
             for i in range(len(chunks))
         ],
     )
-    return len(chunks)
+    return [count_tokens(c) for c in chunks]

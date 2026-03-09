@@ -12,13 +12,14 @@ _SYSTEM = (
 )
 
 
-def query(question: str, top_k: int = TOP_K) -> Iterator[str]:
+def query(question: str, top_k: int = TOP_K) -> tuple[list[dict], dict, Iterator[str]]:
     collection = get_collection()
 
     total = collection.count()
     if total == 0:
-        yield "The knowledge base is empty. Ingest some sources first."
-        return
+        def _empty() -> Iterator[str]:
+            yield "The knowledge base is empty. Ingest some sources first."
+        return [], {}, _empty()
 
     results = collection.query(
         query_texts=[question],
@@ -36,6 +37,16 @@ def query(question: str, top_k: int = TOP_K) -> Iterator[str]:
 
     prompt = f"Context:\n\n{context}\n\nQuestion: {question}"
 
+    chunks = [{"source": m.get("source", "?"), "preview": d[:120].replace("\n", " ")} for d, m in zip(docs, metas)]
+
     client = ollama.Client(host=OLLAMA_HOST)
-    for part in client.generate(model=LLM_MODEL, prompt=prompt, system=_SYSTEM, stream=True):
-        yield part.response
+    stats: dict = {}
+
+    def _stream() -> Iterator[str]:
+        for part in client.generate(model=LLM_MODEL, prompt=prompt, system=_SYSTEM, stream=True):
+            if part.done:
+                stats["prompt_tokens"] = part.prompt_eval_count
+                stats["response_tokens"] = part.eval_count
+            yield part.response
+
+    return chunks, stats, _stream()

@@ -8,9 +8,26 @@ Runs entirely on-device — no external APIs, no cloud dependencies.
 
     ````bash
     botscrum ingest file README.md
-    # Ingested README.md  (15 chunks)
+    #            Ingested README.md
+    #  Chunk │ Tokens
+    # ───────┼────────
+    #      1 │    124
+    #      2 │    118
+    #      3 │    131
+    #      4 │     97
+    #    ... │    ...
+    #     15 │    112
+    # ───────┼────────
+    #  Total │  1,684
 
-    botscrum  query "what is botscrum"
+    botscrum query "what is botscrum" --verbose
+    #
+    # Retrieved 3 chunk(s)
+    #  # │ Source          │ Preview
+    # ───┼─────────────────┼───────────────────────────────────────────────
+    #  1 │ README.md       │ # botscrum  A fully local RAG pipeline that…
+    #  2 │ README.md       │ CLI commands: `ingest`, `query`, `list`, `cl…
+    #  3 │ README.md       │ All data is persisted at ~/.botscrum/chroma/…
     #
     # Q: what is botscrum
     #
@@ -24,6 +41,8 @@ Runs entirely on-device — no external APIs, no cloud dependencies.
     # - **Configuration**: Environment variables control the Ollama host, embedding and LLM models, and chunking settings.
     #
     # Source: `/workspaces/botscrum/README.md`.
+    #
+    # prompt: 1,847 tokens · response: 203 tokens
     ````
 ---
 ## Design Goals
@@ -59,8 +78,10 @@ source (file / URL / ...)
   → load raw text
   → clean and normalize
   → chunk into overlapping segments
+  → count tokens per chunk (≈ chars ÷ 4)
   → embed each chunk (Ollama: nomic-embed-text)
   → store chunks + metadata + embeddings (ChromaDB)
+  → print per-chunk token table
 ```
 
 ### Data flow — query
@@ -71,6 +92,7 @@ user question
   → retrieve top-k similar chunks (ChromaDB cosine similarity)
   → build prompt: system instructions + retrieved context + question
   → stream response (Ollama LLM)
+  → print prompt + response token counts (from Ollama final chunk)
 ```
 
 ### Chunking strategy
@@ -78,6 +100,11 @@ user question
 - Fixed-size character chunks with overlap (default: 500 chars, 50 char overlap)
 - Overlap preserves context across chunk boundaries
 - Chunk size and overlap are configurable via environment variables
+
+### Token counting
+
+- **Ingest**: each chunk's token count is estimated at `len(chunk) // 4` (≈ 1 token per 4 characters) and displayed in a table after ingestion
+- **Query**: exact prompt and response token counts are reported by Ollama at the end of each streamed response
 
 ### Deduplication
 
@@ -96,11 +123,14 @@ All data is persisted at `~/.botscrum/chroma/`. This directory is created automa
 ## CLI Commands
 
 ```
-botscrum ingest file <path>      Ingest a local file (PDF, Markdown, TXT)
-botscrum ingest url <url>        Ingest a web page
-botscrum query "<question>"      Query the knowledge base (streamed response)
-botscrum list                    List all ingested sources
-botscrum clear                   Remove all sources (or a specific one)
+botscrum ingest file <path>           Ingest a local file (PDF, Markdown, TXT)
+botscrum ingest url <url>             Ingest a web page
+botscrum query "<question>"           Query the knowledge base (streamed response)
+botscrum query "<question>" -v        Also show retrieved chunks and sources before the answer
+botscrum list sources                 List all ingested sources with chunk counts
+botscrum list chunks                  List all individual chunks with previews
+botscrum list chunks -s <source-id>   List chunks for a specific source
+botscrum clear                        Remove all sources (or a specific one with --source)
 ```
 
 ---

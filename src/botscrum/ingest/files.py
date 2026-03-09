@@ -1,7 +1,7 @@
 import hashlib
 from pathlib import Path
 
-from ..chunker import chunk_text
+from ..chunker import chunk_text, count_tokens
 from ..store import get_collection
 
 _SUPPORTED = {".pdf", ".md", ".txt", ".rst", ".html"}
@@ -17,7 +17,7 @@ def _load_text(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="replace")
 
 
-def ingest_file(path: Path) -> int:
+def ingest_file(path: Path) -> list[int]:
     path = path.resolve()
     if path.suffix.lower() not in _SUPPORTED:
         raise ValueError(f"Unsupported file type: {path.suffix}. Supported: {', '.join(_SUPPORTED)}")
@@ -33,7 +33,7 @@ def ingest_file(path: Path) -> int:
 
     chunks = chunk_text(text)
     if not chunks:
-        return 0
+        return []
 
     collection.add(
         ids=[f"{source_id}_{i}" for i in range(len(chunks))],
@@ -43,4 +43,4 @@ def ingest_file(path: Path) -> int:
             for i in range(len(chunks))
         ],
     )
-    return len(chunks)
+    return [count_tokens(c) for c in chunks]

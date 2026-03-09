@@ -4,6 +4,11 @@ from .config import CHUNK_OVERLAP, CHUNK_SIZE
 _SEPARATORS = ("\n\n", "\n", ". ", "! ", "? ", " ")
 
 
+def count_tokens(text: str) -> int:
+    """Estimate token count (approx. 1 token per 4 characters)."""
+    return max(1, len(text) // 4)
+
+
 def chunk_text(text: str, size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> list[str]:
     text = text.strip()
     if not text:

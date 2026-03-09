@@ -14,6 +14,21 @@ app.add_typer(list_app, name="list")
 console = Console()
 
 
+def _print_ingest_result(source: str, token_counts: list[int]) -> None:
+    if not token_counts:
+        console.print(f"[yellow]No content found in[/yellow] {source}")
+        return
+
+    table = Table(title=f"[green]Ingested[/green] {source}", show_footer=True)
+    table.add_column("Chunk", justify="right", style="dim", no_wrap=True, footer="Total")
+    table.add_column("Tokens", justify="right", footer=str(sum(token_counts)))
+
+    for i, tokens in enumerate(token_counts, 1):
+        table.add_row(str(i), str(tokens))
+
+    console.print(table)
+
+
 @ingest_app.command("file")
 def ingest_file_cmd(
     path: Path = typer.Argument(..., help="Path to file (PDF, Markdown, TXT, RST, HTML)"),
@@ -28,8 +43,8 @@ def ingest_file_cmd(
     try:
         with Progress(SpinnerColumn(), TextColumn("{task.description}"), console=console, transient=True) as p:
             p.add_task(f"Ingesting [bold]{path.name}[/bold]...")
-            count = ingest_file(path)
-        console.print(f"[green]Ingested[/green] {path}  ([dim]{count} chunks[/dim])")
+            token_counts = ingest_file(path)
+        _print_ingest_result(str(path), token_counts)
     except ValueError as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -48,8 +63,8 @@ def ingest_url_cmd(
     try:
         with Progress(SpinnerColumn(), TextColumn("{task.description}"), console=console, transient=True) as p:
             p.add_task(f"Fetching [bold]{url}[/bold]...")
-            count = ingest_url(url)
-        console.print(f"[green]Ingested[/green] {url}  ([dim]{count} chunks[/dim])")
+            token_counts = ingest_url(url)
+        _print_ingest_result(url, token_counts)
     except Exception as e:
         msg = str(e)
         console.print(f"[red]Error:[/red] {msg}")
@@ -68,7 +83,7 @@ def auth(
     from .auth import browser_login
 
     console.print(f"[cyan]Starting local proxy for[/cyan] {url}")
-    console.print(f"[dim]A login URL will be printed — open it in your browser and log in.[/dim]")
+    console.print("[dim]A login URL will be printed — open it in your browser and log in.[/dim]")
     try:
         count = browser_login(url)
         console.print(f"[green]Saved[/green] {count} session cookies for {url}")
@@ -80,16 +95,38 @@ def auth(
 @app.command()
 def query(
     question: str = typer.Argument(..., help="Question to ask the knowledge base"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Show retrieved chunks before the answer"),
 ) -> None:
     """Query the knowledge base and stream a response."""
     from .query import query as run_query
 
     try:
         console.print(f"\n[bold cyan]Q:[/bold cyan] {question}\n")
+        chunks, stats, stream = run_query(question)
+
+        if verbose and chunks:
+            table = Table(title=f"Retrieved {len(chunks)} chunk(s)", show_lines=True)
+            table.add_column("#", justify="right", style="dim", no_wrap=True)
+            table.add_column("Source", style="cyan")
+            table.add_column("Preview")
+            for i, c in enumerate(chunks, 1):
+                preview = c["preview"]
+                if len(preview) == 120:
+                    preview += "…"
+                table.add_row(str(i), c["source"], preview)
+            console.print(table)
+            console.print()
+
         console.print("[bold cyan]A:[/bold cyan] ", end="")
-        for chunk in run_query(question):
-            print(chunk, end="", flush=True)
+        for part in stream:
+            print(part, end="", flush=True)
         print("\n")
+
+        if stats:
+            console.print(
+                f"[dim]prompt: {stats['prompt_tokens']:,} tokens · "
+                f"response: {stats['response_tokens']:,} tokens[/dim]"
+            )
     except Exception as e:
         console.print(f"\n[red]Error:[/red] {e}")
         raise typer.Exit(1)
