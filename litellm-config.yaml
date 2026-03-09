@@ -1,0 +1,9 @@
+model_list:
+  - model_name: gpt-oss
+    litellm_params:
+      model: ollama/gpt-oss
+      api_base: os.environ/OLLAMA_HOST
+      drop_params: true
+
+litellm_settings:
+  drop_params: true

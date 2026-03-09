@@ -1,8 +1,8 @@
-# Using a Local Ollama LLM with Claude Code CLI
+# Using a Local LLM with Claude Code CLI
 
-Claude Code is hardwired to Anthropic's API, but you can use **LiteLLM** as a proxy that speaks the Anthropic API format while routing to Ollama on the backend.
+Claude Code is hardwired to Anthropic's API, but you can use **LiteLLM** as a proxy that speaks the Anthropic API format while routing to a local LLM backend (Ollama or LM Studio).
 
-## Setup
+## Option A: Ollama
 
 **1. Install LiteLLM**
 ```bash
@@ -25,16 +25,41 @@ export ANTHROPIC_BASE_URL=http://localhost:4000
 export ANTHROPIC_API_KEY=fake-key   # required by the CLI, value doesn't matter
 ```
 
+- here using ' localhost' is correct since we first order claude cli to connect to litellm which then forwards to '$OLLAMA_HOST'
+
 **4. Launch Claude Code**
 ```bash
 claude
 ```
 
-## Notes
+### Notes
 
 - The model must be already pulled in Ollama (`ollama pull llama3.2`)
 - Tool use / function calling works best with models that support it (e.g. `qwen2.5`, `llama3.1`, `mistral-nemo`)
 - Coding-focused models like `qwen2.5-coder` or `deepseek-coder-v2` tend to work better for Claude Code's use case
+
+---
+
+## Option B: LM Studio
+
+
+**Point Claude Code at the proxy**
+```bash
+#!/bin/bash
+export ANTHROPIC_BASE_URL=http://host.docker.internal:1234
+export ANTHROPIC_AUTH_TOKEN=lmstudio
+claude --model openai/gpt-oss-20b
+```
+
+### Notes
+
+- Choose a model in LM Studio that supports **tool/function calling** for best results with Claude Code (e.g. Llama 3, Qwen 2.5, Mistral)
+- If running inside a devcontainer, use `http://host.docker.internal:1234/v1` instead of `localhost`
+
+---
+
+## General notes
+
 - Response quality will vary — smaller local models won't match Sonnet's reasoning or tool-use reliability
 - If the CLI complains about model names, pass `--model claude-3-5-sonnet-20241022` — LiteLLM will ignore it and use what you configured
 
