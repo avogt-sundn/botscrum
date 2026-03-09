@@ -8,6 +8,8 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 app = typer.Typer(help="botscrum — local RAG knowledge base", add_completion=False, no_args_is_help=True)
 ingest_app = typer.Typer(help="Ingest sources into the knowledge base", no_args_is_help=True)
 app.add_typer(ingest_app, name="ingest")
+list_app = typer.Typer(help="List knowledge base contents", no_args_is_help=True)
+app.add_typer(list_app, name="list")
 
 console = Console()
 
@@ -93,7 +95,7 @@ def query(
         raise typer.Exit(1)
 
 
-@app.command("list")
+@list_app.command("sources")
 def list_sources() -> None:
     """List all ingested sources."""
     from .store import get_collection
@@ -121,6 +123,38 @@ def list_sources() -> None:
 
     for sid, info in sources.items():
         table.add_row(info["type"], info["source"], str(info["chunks"]), sid)
+
+    console.print(table)
+
+
+@list_app.command("chunks")
+def list_chunks(
+    source: str = typer.Option(None, "--source", "-s", help="Filter by source ID"),
+) -> None:
+    """List individual chunks in the knowledge base."""
+    from .store import get_collection
+
+    collection = get_collection()
+    result = collection.get(
+        where={"source_id": source} if source else None,
+        include=["documents", "metadatas"],
+    )
+
+    if not result["ids"]:
+        msg = f"No chunks found for source '{source}'." if source else "No chunks ingested yet."
+        console.print(f"[yellow]{msg}[/yellow]")
+        return
+
+    table = Table(title=f"{len(result['ids'])} chunk(s)")
+    table.add_column("#", justify="right", style="dim", no_wrap=True)
+    table.add_column("Source", style="cyan")
+    table.add_column("Preview")
+
+    for i, (doc, meta) in enumerate(zip(result["documents"], result["metadatas"]), 1):
+        preview = doc[:120].replace("\n", " ")
+        if len(doc) > 120:
+            preview += "…"
+        table.add_row(str(i), meta.get("source", "?"), preview)
 
     console.print(table)
 
