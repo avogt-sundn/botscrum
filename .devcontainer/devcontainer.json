@@ -19,7 +19,7 @@
         "CHROMA_DIR": "/home/vscode/.botscrum/chroma"
     },
     "postCreateCommand": "bash .devcontainer/postCreate.sh",
-    "postStartCommand": "sudo chown -R vscode:vscode /home/vscode/.aws && (curl -sf http://host.docker.internal:11434 > /dev/null && echo 'Ollama: connected' || echo 'Ollama: not reachable — start Ollama on your Mac')",
+    "postStartCommand": "bash .devcontainer/postStart.sh",
     "customizations": {
         "vscode": {
             "extensions": [
