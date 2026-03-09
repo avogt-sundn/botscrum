@@ -1,0 +1,39 @@
+{
+    "name": "botscrum",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "mounts": [
+        // Persist the ChromaDB data across container restarts.
+        // Use a named volume so rebuilds don't wipe the knowledge base.
+        // To bind-mount to your host instead, replace with:
+        //   "source=${localEnv:HOME}/.botscrum,target=/home/vscode/.botscrum,type=bind"
+        "source=botscrum-chroma,target=/home/vscode/.botscrum,type=volume",
+        // AWS credentials from the host — required for Claude CLI via Bedrock
+        "source=aws-local,target=/home/vscode/.aws,type=volume"
+    ],
+    "remoteEnv": {
+        // Reach the Ollama instance running on the host Mac
+        "OLLAMA_HOST": "http://host.docker.internal:11434",
+        "CHROMA_DIR": "/home/vscode/.botscrum/chroma"
+    },
+    "postCreateCommand": "bash .devcontainer/postCreate.sh",
+    "postStartCommand": "sudo chown -R vscode:vscode /home/vscode/.aws && (curl -sf http://host.docker.internal:11434 > /dev/null && echo 'Ollama: connected' || echo 'Ollama: not reachable — start Ollama on your Mac')",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "charliermarsh.ruff"
+            ],
+            "settings": {
+                // point at the venv we create above
+                "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+                "editor.formatOnSave": true,
+                "[python]": {
+                    "editor.defaultFormatter": "charliermarsh.ruff"
+                }
+            }
+        }
+    }
+}

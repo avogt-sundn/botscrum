@@ -1,0 +1,30 @@
+[project]
+name = "botscrum"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.12",
+    "rich>=13",
+    "chromadb>=0.5",
+    "ollama>=0.3",
+    "pypdf>=4",
+    "httpx>=0.27",
+    "beautifulsoup4>=4.12",
+    "python-dotenv>=1.0",
+]
+
+[project.scripts]
+botscrum = "botscrum.cli:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/botscrum"]
+
+[project.optional-dependencies]
+browser = ["playwright>=1.40"]
+
+[project.dependency-groups.dev]
+dependencies = []

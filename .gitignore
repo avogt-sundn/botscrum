@@ -1,0 +1,9 @@
+__pycache__
+aws
+.venv
+.env
+.zip
+.claude
+.history
+awscliv2.zip
+uv.lock
