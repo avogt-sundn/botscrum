@@ -4,6 +4,9 @@
 set -e
 
 sudo chown -R vscode:vscode /home/vscode/.aws
+
+sudo chown -R vscode:vscode /home/vscode/.botscrum
+
 # install Claude CLI and AWS CLI (these are not Python-specific)
 sudo npm install -g @anthropic-ai/claude-code \
     && curl -fsSL https://claude.ai/install.sh | bash

@@ -10,7 +10,8 @@
         //   "source=${localEnv:HOME}/.botscrum,target=/home/vscode/.botscrum,type=bind"
         "source=botscrum-chroma,target=/home/vscode/.botscrum,type=volume",
         // AWS credentials from the host — required for Claude CLI via Bedrock
-        "source=aws-local,target=/home/vscode/.aws,type=volume"
+        "source=aws-local,target=/home/vscode/.aws,type=volume",
+        "source=botscrum-local,target=/home/vscode/.botscrum,type=volume"
     ],
     "remoteEnv": {
         // Reach the Ollama instance running on the host Mac
