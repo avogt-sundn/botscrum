@@ -11,10 +11,12 @@ dependencies = [
     "httpx>=0.27",
     "beautifulsoup4>=4.12",
     "python-dotenv>=1.0",
+    "mcp>=1.0",
 ]
 
 [project.scripts]
-botscrum = "botscrum.cli:app"
+botscrum     = "botscrum.cli:app"
+botscrum-mcp = "botscrum.mcp_server:main"
 
 [build-system]
 requires = ["hatchling"]

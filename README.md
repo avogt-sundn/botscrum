@@ -164,6 +164,43 @@ Configured via environment variables or a `.env` file in the working directory:
 
 ---
 
+## Using with Claude CLI
+
+botscrum exposes an [MCP](https://modelcontextprotocol.io) server so Claude CLI can query the knowledge base directly as a tool, without going through Ollama. Retrieved chunks go straight to Claude, which reasons over them and writes the answer itself.
+
+### Setup
+
+```bash
+uv sync          # installs mcp dependency and botscrum-mcp entry point
+```
+
+The `.claude/mcp.json` in this repo registers the server automatically when you open the project in Claude CLI. You can also add it manually:
+
+```bash
+claude mcp add botscrum -- botscrum-mcp
+```
+
+### Tools exposed
+
+| Tool | Description |
+|---|---|
+| `botscrum_retrieve(question, top_k?)` | Returns the top-k most relevant chunks for a question |
+| `botscrum_list_sources()` | Lists all ingested sources with chunk counts |
+
+### Example
+
+Once wired up, Claude CLI will call `botscrum_retrieve` automatically when you ask questions that benefit from local context:
+
+```
+> what does the auth flow look like?
+
+[Claude calls botscrum_retrieve("what does the auth flow look like?")]
+[receives chunks from ChromaDB]
+[answers using retrieved context — no Ollama involved]
+```
+
+---
+
 ## Planned Sources
 
 The ingestion layer is designed to be extended. Planned connectors:

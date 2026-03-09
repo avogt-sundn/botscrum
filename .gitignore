@@ -3,7 +3,8 @@ aws
 .venv
 .env
 .zip
-.claude
+.claude/*
+!.claude/mcp.json
 .history
 awscliv2.zip
 uv.lock

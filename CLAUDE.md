@@ -41,6 +41,15 @@ botscrum clear [--source <id>] [--force]
 botscrum auth <base-url>
 ```
 
+## MCP server
+
+`src/botscrum/mcp_server.py` exposes two tools via FastMCP:
+- `botscrum_retrieve(question, top_k?)` — returns raw chunks (no Ollama call)
+- `botscrum_list_sources()` — returns ingested sources
+
+Entry point: `botscrum-mcp`. Registered for this project in `.claude/mcp.json`.
+When Claude CLI is used as the front-end, skip Ollama entirely — let Claude reason over the raw chunks.
+
 ## Adding a new ingest source
 
 1. Create `src/botscrum/ingest/<name>.py` with a function returning `list[int]`
